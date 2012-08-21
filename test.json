@@ -1,0 +1,102 @@
+{
+    "wasAssociatedWith": {
+        "_:id4": {
+            "prov:Role": "Software",
+            "prov:agent": "nipype:ag1",
+            "prov:activity": "nipype:BET"
+        },
+        "_:id3": {
+            "prov:Role": "LoggedInUser",
+            "prov:agent": "nipype:ag2",
+            "prov:activity": "nipype:BET"
+        }
+    },
+    "used": {
+        "_:id1": {
+            "prov:entity": "nipype:inputs_BET",
+            "prov:activity": "nipype:BET"
+        }
+    },
+    "agent": {
+        "nipype:ag2": {
+            "foaf:name": "nolan",
+            "prov:type": "\"prov:Person\"^^xsd:QName"
+        },
+        "nipype:ag1": {
+            "nipype:commit_source": "\"foaf:installation\"^^xsd:QName",
+            "nipype:traits_version": "\"foaf:4.1.0\"^^xsd:QName",
+            "nipype:networkx_version": "\"foaf:1.6\"^^xsd:QName",
+            "nipype:scipy_version": "\"foaf:0.10.0\"^^xsd:QName",
+            "nipype:sys_platform": "\"foaf:darwin\"^^xsd:QName",
+            "nipype:numpy_version": "\"foaf:1.6.1\"^^xsd:QName",
+            "foaf:name": "Nipype",
+            "prov:type": "\"prov:Software\"^^xsd:QName",
+            "nipype:sys_version": "\"foaf:2.7.3 |EPD_free 7.2-1 (32-bit)| (default, Apr 12 2012, 11:28:34) \n[GCC 4.0.1 (Apple Inc. build 5493)]\"^^xsd:QName",
+            "nipype:commit_hash": "\"foaf:c17dbe7\"^^xsd:QName",
+            "nipype:sys_executable": "\"foaf:/Library/Frameworks/Python.framework/Versions/7.3/Resources/Python.app/Contents/MacOS/Python\"^^xsd:QName",
+            "nipype:pkg_path": "\"foaf:/Users/nolan/.virtualenv/test/lib/python2.7/site-packages/nipype\"^^xsd:QName",
+            "nipype:nibabel_version": "\"foaf:1.3.0dev\"^^xsd:QName"
+        }
+    },
+    "entity": {
+        "nipype:inputs_BET": {
+            "prov:type": "\"prov:Bundle\"^^xsd:QName"
+        },
+        "nipype:outputs_BET": {
+            "prov:type": "\"prov:Bundle\"^^xsd:QName"
+        }
+    },
+    "prefix": {
+        "foaf": "http://xmlns.com/foaf/0.1/",
+        "nipype": "http://nipy.org/nipype/terms/",
+        "dcterms": "http://purl.org/dc/terms/",
+        "$": "http://neurolex.org/"
+    },
+    "bundle": {
+        "nipype:inputs_BET": {
+            "entity": {
+                "nipype:in_01": {
+                    "nipype:ignore_exception": false,
+                    "prov:type": "\"nipype:input\"^^xsd:QName"
+                },
+                "nipype:in_00": {
+                    "nipype:environ": {
+                        "FSLOUTPUTTYPE": "NIFTI_GZ"
+                    },
+                    "prov:type": "\"nipype:input\"^^xsd:QName"
+                },
+                "nipype:in_03": {
+                    "nipype:output_type": "NIFTI_GZ",
+                    "prov:type": "\"nipype:input\"^^xsd:QName"
+                },
+                "nipype:in_02": {
+                    "nipype:in_file": "mprage.nii.gz",
+                    "prov:type": "\"nipype:input\"^^xsd:QName"
+                }
+            }
+        },
+        "nipype:outputs_BET": {
+            "entity": {
+                "nipype:out_00": {
+                    "nipype:output_type": "NIFTI_GZ",
+                    "prov:type": "\"nipype:input\"^^xsd:QName"
+                }
+            }
+        }
+    },
+    "activity": {
+        "nipype:BET": {
+            "prov:startTime": "2012-08-17T17:35:47.787147",
+            "prov:endTime": "2012-08-17T17:35:55.706616",
+            "prov:type": "\"nipype:BET\"^^xsd:QName",
+            "nipype:cmdline": "bet mprage.nii.gz /Users/nolan/Downloads/mprage/mprage_brain.nii.gz",
+            "foaf:host": "Nolans-MacBook-Pro.local"
+        }
+    },
+    "wasGeneratedBy": {
+        "_:id2": {
+            "prov:entity": "nipype:outputs_BET",
+            "prov:activity": "nipype:BET"
+        }
+    }
+}
