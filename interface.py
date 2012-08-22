@@ -45,36 +45,101 @@ class Interface(object):
         self._set_bundle_proxy()
 
     def parse_prov (self, prov_json):
+        """
+        parse a prov.json file using provpy
+
+        persist the files in a graphdb
+        """
         self.bundle = prov.json.load(open(prov_json), cls = prov.ProvBundle.JSONDecoder)
         return self.bundle
 
     def process_bundle(self):
-        prov_types = prov.PROV_RECORD_IDS_MAP.keys()
+        print prov.PROV_N_MAP
+        self.response = []
         for record in self.bundle.get_records():
-            if record in prov_types:
-                print 'prov:type', record
-            type = record.get_prov_type() #prov.PROV_N_MAP[record.get_type()]
-            print type
-            asserted_types = [type.get_uri() for type in record.get_asserted_types()]
-            print asserted_types
-            attributes = []
-        return
+            if record.is_element():
+                if isinstance(record, prov.ProvEntity):
+                    response = self._upload_entity(record)
+                    self.response.append(response)
+                elif isinstance(record, prov.ProvActivity):
+                    response = self._upload_activity(record)
+                    self.response.append(response)
+                elif isinstance(record, prov.ProvAgent):
+                    response = self._upload_agent(record)
+                    self.response.append(response)
+            elif record.is_relation():
+                print 'is_relation'
+                if isinstance(record,prov.ProvGeneration):
+                    print 'is_generation'
+                    response = self._upload_generation(record)
+                    self.response.append(response)
+        return self.response
 
-
-
-    # initilize proxies to each of the prov structures
+### Component 1: Entities and Activities
 
     def _set_entity_proxy(self):
+        """
+        initialize entity proxy
+        """
         self._graph.add_proxy("entities", ProvEntity)
         self.entities = self._graph.entities
+
+    def _upload_entity(self, record):
+        """
+        parse entity
+        """
+
+        identifier = record.get_identifier().get_uri()
+        asserted_types = [type.get_uri() for type in record.get_asserted_types()]
+        attributes = record.get_attributes()
+        provn = record.get_provn()
+        response = self.entities.create(identifier=identifier,
+            asserted_types=asserted_types,
+            attributes=attributes[1],
+            provn=provn
+        )
+        print 'entity:',response.eid
+        return response
 
     def _set_activity_proxy(self):
         self._graph.add_proxy("activities", ProvActivity)
         self.activities = self._graph.activities
 
+    def _upload_activity(self, record):
+        """
+        parse activity
+        """
+
+        identifier = record.get_identifier().get_uri()
+        asserted_types = [type.get_uri() for type in record.get_asserted_types()]
+        attributes = record.get_attributes()
+        provn = record.get_provn()
+        response = self.activities.create(identifier=identifier,
+            asserted_types=asserted_types,
+            attributes=attributes[1],
+            provn=provn,
+            start_time=record.get_attributes()[0].values()[0],
+            end_time=record.get_attributes()[0].values()[1]
+        )
+        print 'activity:', response.eid
+        return response
+
     def _set_generation_proxy(self):
         self._graph.add_proxy("wasGeneratedBy", ProvGeneration)
         self.wasGeneratedBy = self._graph.wasGeneratedBy
+
+    def _upload_generation(self,record):
+        entity = record.get_attributes()[0][1]
+        print entity
+        activity = record.get_attributes()[0][2]
+        print activity
+        provn = record.get_provn()
+        response = self.wasGeneratedBy.create(entity=entity,
+            activity=activity,
+            provn=provn
+        )
+        print 'generation:', response.eid
+        return response
 
     def _set_usage_proxy(self):
         self._graph.add_proxy("used", ProvUsage)
@@ -108,6 +173,23 @@ class Interface(object):
     def _set_agent_proxy(self):
         self._graph.add_proxy("agents", ProvAgent)
         self.agents = self._graph.agents
+
+    def _upload_agent(self, record):
+        """
+        parse activity
+        """
+
+        identifier = record.get_identifier().get_uri()
+        asserted_types = [type.get_uri() for type in record.get_asserted_types()]
+        attributes = record.get_attributes()
+        provn = record.get_provn()
+        response = self.agents.create(identifier=identifier,
+            asserted_types=asserted_types,
+            attributes=attributes[1],
+            provn=provn,
+        )
+        print 'agent:', response.eid
+        return response
 
     def _set_attribution_proxy(self):
         self._graph.add_proxy("wasAttributedTo", ProvAttribution)
