@@ -1,2 +1,2 @@
 ProvBulbs is an implementation of PROV-DM using the Bulbs library to persist provenance graphs in any Graph database
-that is compliant with the Tinkerpop Blueprints framework running re
+that is compliant with the Tinkerpop Blueprints framework running Rexster
