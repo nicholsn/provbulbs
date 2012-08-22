@@ -32,7 +32,7 @@ def read_fs_stats(subjid, stat_type, hemi=None):
         print "FreeSurfer SUBJECT_DIR environment variable is not set."
         return None
 
-def parse_stats():
+def parse_stats(fs_stats):
     collection = {}
 
     # fields for volumetric statistics
@@ -43,7 +43,6 @@ def parse_stats():
     surf_stats = ['StructName', 'NumVert', 'SurfArea', 'GrayVol', 'ThickAvg',
                   'ThickStd', 'MeanCurv', 'GausCurv', 'FoldInd', 'CurvInd']
 
-    aparc
     for row in aparc:
         for stat in range(len(stats)):
             entity = hemi + '.' + row[0] + '.' + stats[stat]
@@ -51,7 +50,7 @@ def parse_stats():
                                   'prov:value':row[stat + 1]}
     return collection
 
-result = parse_aparc('/Applications/freesurfer/subjects/bert/stats/rh.aparc.stats', 'rh')
+result = parse_stats('/Applications/freesurfer/subjects/bert/stats/rh.aparc.stats', 'rh')
 
 
 print result
