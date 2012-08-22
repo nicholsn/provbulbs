@@ -45,6 +45,7 @@ class Interface(object):
             attributes = []
         return
 
+
     # initilize proxies to each of the prov structures
 
     def _set_entity_proxy(self):
@@ -96,17 +97,17 @@ class Interface(object):
         self._graph.add_proxy("wasAssociatedWith", ProvAssociation)
         self.wasAssociatedWith = self._graph.wasAssociatedWith
 
-def _set_delegation_proxy(self):
-    self._graph.add_proxy("actedOnBehalfOf", ProvDelegation)
-    self.actedOnBehalfOf = self._graph.actedOnBehalfOf
+    def _set_delegation_proxy(self):
+        self._graph.add_proxy("actedOnBehalfOf", ProvDelegation)
+        self.actedOnBehalfOf = self._graph.actedOnBehalfOf
 
-def _set_influence_proxy(self):
-    self._graph.add_proxy("wasInfluencedBy", ProvInfluence)
-    self.wasInfluencedBy = self._graph.wasInfluencedBy
+    def _set_influence_proxy(self):
+        self._graph.add_proxy("wasInfluencedBy", ProvInfluence)
+        self.wasInfluencedBy = self._graph.wasInfluencedBy
 
-def _set_influence_proxy(self):
-    self._graph.add_proxy("wasInfluencedBy", ProvInfluence)
-    self.wasInfluencedBy = self._graph.wasInfluencedBy
+    def _set_influence_proxy(self):
+        self._graph.add_proxy("wasInfluencedBy", ProvInfluence)
+        self.wasInfluencedBy = self._graph.wasInfluencedBy
 
 ### Component 4: Bundles
 
@@ -114,30 +115,30 @@ def _set_influence_proxy(self):
 
 ### Component 5: Alternate Entities
 
-def _set_specialization_proxy(self):
-    self._graph.add_proxy("specializationOf", ProvSpecialization)
-    self.specializationOf = self._graph.specializationOf
+    def _set_specialization_proxy(self):
+        self._graph.add_proxy("specializationOf", ProvSpecialization)
+        self.specializationOf = self._graph.specializationOf
 
-def _set_alternate_proxy(self):
-    self._graph.add_proxy("alternateOf", ProvAlternate)
-    self.alternateOf = self._graph.alternateOf
+    def _set_alternate_proxy(self):
+        self._graph.add_proxy("alternateOf", ProvAlternate)
+        self.alternateOf = self._graph.alternateOf
 
-def _set_mention_proxy(self):
-    self._graph.add_proxy("mentionOf", ProvMention)
-    self.mentionOf = self._graph.mentionOf
+    def _set_mention_proxy(self):
+        self._graph.add_proxy("mentionOf", ProvMention)
+        self.mentionOf = self._graph.mentionOf
 
 ### Component 6: Collections
 
-def _set_membership_proxy(self):
-    self._graph.add_proxy("hadMember", ProvMembership)
-    self.hadMember = self._graph.hadMember
+    def _set_membership_proxy(self):
+        self._graph.add_proxy("hadMember", ProvMembership)
+        self.hadMember = self._graph.hadMember
 
-def _set_mention_proxy(self):
-    self._graph.add_proxy("mentionOf", ProvMention)
-    self.mentionOf = self._graph.mentionOf
+    def _set_mention_proxy(self):
+        self._graph.add_proxy("mentionOf", ProvMention)
+        self.mentionOf = self._graph.mentionOf
 
-def _set_bundle_proxy(self):
-    self._graph.add_proxy("bundles", ProvBundle)
-    self.bundles = self._graph.bundles
+    def _set_bundle_proxy(self):
+        self._graph.add_proxy("bundles", ProvBundle)
+        self.bundles = self._graph.bundles
 
 
