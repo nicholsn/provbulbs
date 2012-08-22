@@ -26,24 +26,40 @@ class Interface(object):
         self._graph = Graph(config)
         self._set_entity_proxy()
         self._set_activity_proxy()
-        self._set_agent_proxy()
-        self._set_association_proxy()
         self._set_generation_proxy()
         self._set_usage_proxy()
-
+        self._set_communication_proxy()
+        self._set_start_proxy()
+        self._set_end_proxy()
+        self._set_invalidation_proxy()
+        self._set_derivation_proxy()
+        self._set_agent_proxy()
+        self._set_attribution_proxy()
+        self._set_association_proxy()
+        self._set_delegation_proxy()
+        self._set_influence_proxy()
+        self._set_specialization_proxy()
+        self._set_alternate_proxy()
+        self._set_mention_proxy()
+        self._set_membership_proxy()
+        self._set_bundle_proxy()
 
     def parse_prov (self, prov_json):
         self.bundle = prov.json.load(open(prov_json), cls = prov.ProvBundle.JSONDecoder)
         return self.bundle
 
     def process_bundle(self):
+        prov_types = prov.PROV_RECORD_IDS_MAP.keys()
         for record in self.bundle.get_records():
+            if record in prov_types:
+                print 'prov:type', record
             type = record.get_prov_type() #prov.PROV_N_MAP[record.get_type()]
             print type
             asserted_types = [type.get_uri() for type in record.get_asserted_types()]
             print asserted_types
             attributes = []
         return
+
 
 
     # initilize proxies to each of the prov structures
@@ -63,6 +79,10 @@ class Interface(object):
     def _set_usage_proxy(self):
         self._graph.add_proxy("used", ProvUsage)
         self.used = self._graph.used
+
+    def _set_communication_proxy(self):
+        self._graph.add_proxy("wasInformedBy", ProvCommunication)
+        self.wasInformedBy = self._graph.wasInformedBy
 
     def _set_start_proxy(self):
         self._graph.add_proxy("wasStartedBy", ProvStart)
@@ -105,10 +125,6 @@ class Interface(object):
         self._graph.add_proxy("wasInfluencedBy", ProvInfluence)
         self.wasInfluencedBy = self._graph.wasInfluencedBy
 
-    def _set_influence_proxy(self):
-        self._graph.add_proxy("wasInfluencedBy", ProvInfluence)
-        self.wasInfluencedBy = self._graph.wasInfluencedBy
-
 ### Component 4: Bundles
 
 # See below
@@ -133,12 +149,7 @@ class Interface(object):
         self._graph.add_proxy("hadMember", ProvMembership)
         self.hadMember = self._graph.hadMember
 
-    def _set_mention_proxy(self):
-        self._graph.add_proxy("mentionOf", ProvMention)
-        self.mentionOf = self._graph.mentionOf
-
     def _set_bundle_proxy(self):
         self._graph.add_proxy("bundles", ProvBundle)
         self.bundles = self._graph.bundles
-
 
