@@ -36,7 +36,7 @@ class ProvRelation(Relationship):
     label = "relation"
 
     # Required
-    identifier = String(nullable=False)
+    identifier = String(default=lambda :str("rel"), nullable=False)
     created = DateTime(default=current_datetime, nullable=False)
 
     # Optional
