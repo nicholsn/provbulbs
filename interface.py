@@ -48,32 +48,53 @@ class Interface(object):
         """
         parse a prov.json file using provpy
 
-        persist the files in a graphdb
-        """
-        self.bundle = prov.json.load(open(prov_json), cls = prov.ProvBundle.JSONDecoder)
-        return self.bundle
+        cache as an attribute of interface
 
-    def process_bundle(self):
-        print prov.PROV_N_MAP
-        self.response = []
-        for record in self.bundle.get_records():
-            if record.is_element():
-                if isinstance(record, prov.ProvEntity):
-                    response = self._upload_entity(record)
-                    self.response.append(response)
-                elif isinstance(record, prov.ProvActivity):
-                    response = self._upload_activity(record)
-                    self.response.append(response)
-                elif isinstance(record, prov.ProvAgent):
-                    response = self._upload_agent(record)
-                    self.response.append(response)
-            elif record.is_relation():
-                print 'is_relation'
-                if isinstance(record,prov.ProvGeneration):
-                    print 'is_generation'
-                    response = self._upload_generation(record)
-                    self.response.append(response)
-        return self.response
+        return parsed bundle
+        """
+        self._bundle = prov.json.load(open(prov_json), cls = prov.ProvBundle.JSONDecoder)
+        return self._bundle
+
+    def _upload_lookup(self, proxy_type):
+        """
+        method to lookup the upload function for a given structure
+        """
+        return getattr(self, '_upload_' + proxy_type, None)
+
+    def process_bundle(self, bundle=None):
+        bundle = bundle
+        structures = {'element': [],
+                     'relation': []}
+        response = []
+        try:
+            if not bundle:
+                bundle = self._bundle
+            for record in bundle.get_records():
+                if record.is_element():
+                    # TODO logic for processing nested bundles
+                    if isinstance(record,prov.ProvBundle):
+                        structures['element'].append(record)
+                        self.process_bundle(bundle=record)
+                    else:
+                        structures['element'].append(record)
+                elif record.is_relation():
+                    structures['relation'].append(record)
+                else:
+                    pass
+        except AttributeError:
+            print "self._bundle is None. Did you run interface.parse_prov(<prov.json>)?"
+
+        # first process all the elements
+        for element in structures['element']:
+            print element
+            self._upload_lookup(prov.PROV_N_MAP[element.get_type()])(element)
+
+        # relations require that elements are created first
+        for relation in structures['relation']:
+            self._upload_lookup(prov.PROV_N_MAP[relation.get_type()])(relation)
+
+        print structures
+        return response
 
 ### Component 1: Entities and Activities
 
@@ -128,13 +149,15 @@ class Interface(object):
         self._graph.add_proxy("wasGeneratedBy", ProvGeneration)
         self.wasGeneratedBy = self._graph.wasGeneratedBy
 
-    def _upload_generation(self,record):
-        entity = record.get_attributes()[0][1]
-        print entity
-        activity = record.get_attributes()[0][2]
-        print activity
+    def _upload_wasGeneratedBy(self,record):
         provn = record.get_provn()
-        response = self.wasGeneratedBy.create(entity=entity,
+        entity_id = record.get_attributes()[0][1].get_identifier().get_uri()
+        print entity_id
+        entity = list(self.entities.index.lookup(identifier=entity_id))[0]
+        activity_id = record.get_attributes()[0][2].get_identifier().get_uri()
+        activity = list(self.activities.index.lookup(identifier=activity_id))[0]
+        response = self.wasGeneratedBy.create(entity, activity,
+            entity=entity,
             activity=activity,
             provn=provn
         )
@@ -145,6 +168,20 @@ class Interface(object):
         self._graph.add_proxy("used", ProvUsage)
         self.used = self._graph.used
 
+    def _upload_used(self, record):
+        provn = record.get_provn()
+        activity_id = record.get_attributes()[0][2].get_identifier().get_uri()
+        activity = list(self.activities.index.lookup(identifier=activity_id))[0]
+        entity_id = record.get_attributes()[0][1].get_identifier().get_uri()
+        entity = list(self.entities.index.lookup(identifier=entity_id))[0]
+        response = self.used.create(activity, entity,
+            activity=activity,
+            entity=entity,
+            provn=provn
+        )
+        print 'used:', response.eid
+        return response
+
     def _set_communication_proxy(self):
         self._graph.add_proxy("wasInformedBy", ProvCommunication)
         self.wasInformedBy = self._graph.wasInformedBy
@@ -152,6 +189,23 @@ class Interface(object):
     def _set_start_proxy(self):
         self._graph.add_proxy("wasStartedBy", ProvStart)
         self.wasStartedBy = self._graph.wasStartedBy
+
+    def _upload_wasStartedBy(self,record):
+        provn = record.get_provn()
+
+        attributes = record.get_attributes()
+
+        activity_id = attributes[0][2].get_identifier().get_uri()
+        activity = list(self.activities.index.lookup(identifier=activity_id))[0]
+        starter_id = attributes[0][6].get_identifier().get_uri()
+        starter = list(self.activities.index.lookup(identifier=starter_id))[0]
+        response = self.wasStartedBy.create(activity, starter,
+            activity=activity,
+            starter_activity=starter,
+            provn=provn
+        )
+        print 'wasStartedBy:', response.eid
+        return response
 
     def _set_end_proxy(self):
         self._graph.add_proxy("wasEndedBy", ProvEnd)
@@ -199,6 +253,23 @@ class Interface(object):
         self._graph.add_proxy("wasAssociatedWith", ProvAssociation)
         self.wasAssociatedWith = self._graph.wasAssociatedWith
 
+    def _upload_wasAssociatedWith(self,record):
+        provn = record.get_provn()
+
+        attributes = record.get_attributes()
+
+        activity_id = attributes[0][2].get_identifier().get_uri()
+        activity = list(self.activities.index.lookup(identifier=activity_id))[0]
+        agent_id = attributes[0][8].get_identifier().get_uri()
+        agent = list(self.agents.index.lookup(identifier=agent_id))[0]
+        response = self.wasStartedBy.create(activity, agent,
+            activity=activity,
+            agent=agent,
+            provn=provn
+        )
+        print 'wasAssociatedWith:', response.eid
+        return response
+
     def _set_delegation_proxy(self):
         self._graph.add_proxy("actedOnBehalfOf", ProvDelegation)
         self.actedOnBehalfOf = self._graph.actedOnBehalfOf
@@ -235,3 +306,7 @@ class Interface(object):
         self._graph.add_proxy("bundles", ProvBundle)
         self.bundles = self._graph.bundles
 
+
+    class _ElementProxy(object):
+        def __init__(self):
+            pass
