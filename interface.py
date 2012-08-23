@@ -21,6 +21,7 @@ class Interface(object):
     >>> config = Config("http://<your-rexster-graph-url>")
     >>> interface = Interface(config)
     >>> interface.parse_prov("provenance.json")
+    >>> interface.process_bundle()
     """
     def __init__(self, config):
         self._graph = Graph(config)
@@ -262,7 +263,7 @@ class Interface(object):
         activity = list(self.activities.index.lookup(identifier=activity_id))[0]
         agent_id = attributes[0][8].get_identifier().get_uri()
         agent = list(self.agents.index.lookup(identifier=agent_id))[0]
-        response = self.wasStartedBy.create(activity, agent,
+        response = self.wasAssociatedWith.create(activity, agent,
             activity=activity,
             agent=agent,
             provn=provn
