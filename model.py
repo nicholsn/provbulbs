@@ -192,8 +192,8 @@ class ProvAssociation(ProvRelation):
     # Required attributes
     activity = String(nullable=False)
     # Optional attributes
-    agent = String(nullable=False)
-    plan = String(nullable=False)
+    agent = String(nullable=True)
+    plan = String(nullable=True)
 
 class ProvDelegation(ProvRelation):
     """
@@ -205,7 +205,7 @@ class ProvDelegation(ProvRelation):
     delegate_entity = String(nullable=False)
     responsible_entity = String(nullable=False)
     # Optional attributes
-    activity = String(nullable=False)
+    activity = String(nullable=True)
 
 class ProvInfluence(ProvRelation):
     """
@@ -217,7 +217,7 @@ class ProvInfluence(ProvRelation):
     influencee_entity = String(nullable=False)
     influencer_entity = String(nullable=False)
     # Optional attributes
-    activity = String(nullable=False)
+    activity = String(nullable=True)
 
 ### Component 4: Bundles
 
