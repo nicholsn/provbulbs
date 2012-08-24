@@ -66,7 +66,7 @@ class Interface(object):
         bundle = bundle
         structures = {'element': [],
                      'relation': []}
-        response = []
+        responses = {}
         try:
             if not bundle:
                 bundle = self._bundle
@@ -87,15 +87,22 @@ class Interface(object):
 
         # first process all the elements
         for element in structures['element']:
-            print element
-            self._upload_lookup(prov.PROV_N_MAP[element.get_type()])(element)
+            element_type = prov.PROV_N_MAP[element.get_type()]
+            element_uri = element.get_identifier().get_uri()
+            responses[element_uri] = self._upload_lookup(element_type)(element)
 
         # relations require that elements are created first
         for relation in structures['relation']:
-            self._upload_lookup(prov.PROV_N_MAP[relation.get_type()])(relation)
+            relation_type = prov.PROV_N_MAP[relation.get_type()]
+            relation_id = relation.get_identifier()
+            if relation_id:
+                relation_uri = relation_id.get_uri()
+                responses[relation_uri] = self._upload_lookup(relation_type)(relation)
+            else:
+                relation_uri = 'rel_' + str(hash(relation))
+                responses[relation_uri] = self._upload_lookup(relation_type)(relation)
 
-        print structures
-        return response
+        return responses
 
 ### Component 1: Entities and Activities
 
@@ -153,7 +160,6 @@ class Interface(object):
     def _upload_wasGeneratedBy(self,record):
         provn = record.get_provn()
         entity_id = record.get_attributes()[0][1].get_identifier().get_uri()
-        print entity_id
         entity = list(self.entities.index.lookup(identifier=entity_id))[0]
         activity_id = record.get_attributes()[0][2].get_identifier().get_uri()
         activity = list(self.activities.index.lookup(identifier=activity_id))[0]
