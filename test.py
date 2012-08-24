@@ -25,7 +25,7 @@ response = interface.process_bundle()
 for i in interface.entities.get_all(): print i
 
 # request for the registered keys for a model
-interface.entities.get_property_keys()
+print interface.entities.get_property_keys()
 
 # and query a model object by their properties
 identifier='http://nipy.org/nipype/terms/0.6/ag1'
