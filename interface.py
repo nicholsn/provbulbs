@@ -104,7 +104,52 @@ class Interface(object):
 
         return responses
 
+    def _process_attributes(self, record):
+        attributes = record.get_attributes()
+        optional_attributes = attributes[0]
+        extra_attributes = attributes[1]
+        results = {'optional':{},
+                   'extra':{}}
+
+        if optional_attributes:
+            for attribute in optional_attributes:
+                optional = {}
+                for k,v in attribute:
+
+                    if isinstance(k, prov.QName):
+                        if isinstance(v, prov.QName):
+                            optional[k.get_uri()] = v.get_uri()
+                        else:
+                            optional[k.get_uri()] = v
+                    else:
+                        if isinstance(v, prov.QName):
+                            optional[k] = v.get_uri()
+                        else:
+                            optional[k] = v
+                    results['optional'] = optional
+
+        if extra_attributes:
+            for k,v in extra_attributes:
+                extra = {}
+
+                if isinstance(k, prov.QName):
+                    if isinstance(v, prov.QName):
+                        key = k.get_namespace().get_prefix() + '_' + k.get_localpart()
+                        extra[key] = v.get_uri()
+                    else:
+                        key = k.get_namespace().get_prefix() + '_' + k.get_localpart()
+                        extra[key] = v
+                else:
+                    if isinstance(v, prov.QName):
+                        extra[k] = v.get_localpart()
+                    else:
+                        extra[k] = v
+                results['extra'] = extra
+        return results
+
+
 ### Component 1: Entities and Activities
+
 
     def _set_entity_proxy(self):
         """
@@ -117,16 +162,36 @@ class Interface(object):
         """
         parse entity
         """
+        attributes = self._process_attributes(record)
+        optional_attributes = attributes['optional']
+        extra_attributes = attributes['extra']
 
-        identifier = record.get_identifier().get_uri()
-        asserted_types = [type.get_uri() for type in record.get_asserted_types()]
-        attributes = record.get_attributes()
-        provn = record.get_provn()
-        response = self.entities.create(identifier=identifier,
-            asserted_types=asserted_types,
-            attributes=attributes[1],
-            provn=provn
-        )
+        data = dict(
+            identifier = record.get_identifier().get_uri(),
+            provn = record.get_provn(),
+            asserted_types = [type.get_uri() for type in record.get_asserted_types()],
+            optional_attributes = optional_attributes.keys(),
+            extra_attributes = extra_attributes.keys()
+            )
+        response = self.entities.create(data)
+
+        data_update = response.data()
+
+        for optional in optional_attributes.iterkeys():
+            prov_type = prov.PROV_ID_ATTRIBUTES_MAP[optional].split(':')[-1]
+            data_update[prov_type] = optional_attributes[optional]
+
+        for extra in extra_attributes.iterkeys():
+            # bulbs reserves the 'label' keyword
+            prov_type = extra
+            data_update[prov_type] = extra_attributes[extra]
+
+        if record.is_element:
+            self._graph.vertices.update(response.eid,data_update)
+
+        elif record.is_relation:
+            self._graph.edges.update(response.eid,data_update)
+
         print 'entity:',response.eid
         return response
 
