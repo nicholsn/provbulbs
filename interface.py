@@ -45,6 +45,9 @@ class Interface(object):
         self._set_membership_proxy()
         self._set_bundle_proxy()
 
+    def close_connection(self):
+        del self._graph
+
     def parse_prov (self, prov_json):
         """
         parse a prov.json file using provpy
@@ -105,33 +108,32 @@ class Interface(object):
         return responses
 
     def _process_attributes(self, record):
-        attributes = record.get_attributes()
-        optional_attributes = attributes[0]
-        extra_attributes = attributes[1]
-        results = {'optional':{},
+        all_attributes = record.get_attributes()
+        attributes = all_attributes[0]
+        extra_attributes = all_attributes[1]
+        results = {'attrs':{},
                    'extra':{}}
 
-        if optional_attributes:
-            for attribute in optional_attributes:
-                optional = {}
-                for k,v in attribute:
-
-                    if isinstance(k, prov.QName):
-                        if isinstance(v, prov.QName):
-                            optional[k.get_uri()] = v.get_uri()
-                        else:
-                            optional[k.get_uri()] = v
+        if attributes:
+            attrs = {}
+            for k in attributes.keys():
+                print 'attr key:', k
+                if isinstance(k, prov.QName):
+                    key = k.get_namespace().get_prefix() + '_' + k.get_localpart()
+                    if isinstance(attributes[k], prov.QName):
+                        attrs[key] = attributes[k].get_uri()
                     else:
-                        if isinstance(v, prov.QName):
-                            optional[k] = v.get_uri()
-                        else:
-                            optional[k] = v
-                    results['optional'] = optional
+                        attrs[key] = attributes[k]
+                else:
+                    if isinstance(k, prov.QName):
+                        attrs[k] = attributes[k].get_uri()
+                    else:
+                        attrs[k] = attributes[k]
+                results['attrs'] = attrs
 
         if extra_attributes:
             for k,v in extra_attributes:
                 extra = {}
-
                 if isinstance(k, prov.QName):
                     if isinstance(v, prov.QName):
                         key = k.get_namespace().get_prefix() + '_' + k.get_localpart()
@@ -162,24 +164,27 @@ class Interface(object):
         """
         parse entity
         """
-        attributes = self._process_attributes(record)
-        optional_attributes = attributes['optional']
-        extra_attributes = attributes['extra']
+        all_attributes = self._process_attributes(record)
+        attributes = all_attributes['attrs']
+        extra_attributes = all_attributes['extra']
 
         data = dict(
             identifier = record.get_identifier().get_uri(),
             provn = record.get_provn(),
             asserted_types = [type.get_uri() for type in record.get_asserted_types()],
-            optional_attributes = optional_attributes.keys(),
+            attributes = attributes.keys(),
             extra_attributes = extra_attributes.keys()
             )
         response = self.entities.create(data)
 
         data_update = response.data()
 
-        for optional in optional_attributes.iterkeys():
-            prov_type = prov.PROV_ID_ATTRIBUTES_MAP[optional].split(':')[-1]
-            data_update[prov_type] = optional_attributes[optional]
+        for attrs in attributes.iterkeys():
+            if attrs in prov.PROV_ID_ATTRIBUTES_MAP.keys():
+                prov_type = prov.PROV_ID_ATTRIBUTES_MAP[attrs].split(':')[-1]
+            else:
+                prov_type = attrs
+            data_update[prov_type] = attributes[attrs]
 
         for extra in extra_attributes.iterkeys():
             # bulbs reserves the 'label' keyword
@@ -203,19 +208,40 @@ class Interface(object):
         """
         parse activity
         """
+        all_attributes = self._process_attributes(record)
+        attributes = all_attributes['attrs']
+        extra_attributes = all_attributes['extra']
 
-        identifier = record.get_identifier().get_uri()
-        asserted_types = [type.get_uri() for type in record.get_asserted_types()]
-        attributes = record.get_attributes()
-        provn = record.get_provn()
-        response = self.activities.create(identifier=identifier,
-            asserted_types=asserted_types,
-            attributes=attributes[1],
-            provn=provn,
-            start_time=record.get_attributes()[0].values()[0],
-            end_time=record.get_attributes()[0].values()[1]
+        data = dict(
+            identifier = record.get_identifier().get_uri(),
+            provn = record.get_provn(),
+            asserted_types = [type.get_uri() for type in record.get_asserted_types()],
+            attributes = attributes.keys(),
+            extra_attributes = extra_attributes.keys()
         )
-        print 'activity:', response.eid
+        response = self.activities.create(data)
+
+        data_update = response.data()
+
+        for attrs in attributes.iterkeys():
+            if attrs in prov.PROV_ID_ATTRIBUTES_MAP.keys():
+                prov_type = prov.PROV_ID_ATTRIBUTES_MAP[attrs].split(':')[-1]
+            else:
+                prov_type = attrs
+            data_update[prov_type] = attributes[attrs]
+
+        for extra in extra_attributes.iterkeys():
+            # bulbs reserves the 'label' keyword
+            prov_type = extra
+            data_update[prov_type] = extra_attributes[extra]
+
+        if record.is_element:
+            self._graph.vertices.update(response.eid,data_update)
+
+        elif record.is_relation:
+            self._graph.edges.update(response.eid,data_update)
+
+        print 'activity:',response.eid
         return response
 
     def _set_generation_proxy(self):
@@ -223,16 +249,61 @@ class Interface(object):
         self.wasGeneratedBy = self._graph.wasGeneratedBy
 
     def _upload_wasGeneratedBy(self,record):
-        provn = record.get_provn()
-        entity_id = record.get_attributes()[0][1].get_identifier().get_uri()
-        entity = list(self.entities.index.lookup(identifier=entity_id))[0]
-        activity_id = record.get_attributes()[0][2].get_identifier().get_uri()
-        activity = list(self.activities.index.lookup(identifier=activity_id))[0]
-        response = self.wasGeneratedBy.create(entity, activity,
-            entity=entity,
-            activity=activity,
-            provn=provn
+        all_attributes = self._process_attributes(record)
+        attributes = all_attributes['attrs']
+        extra_attributes = all_attributes['extra']
+
+        if record.get_identifier():
+            identifier = record.get_identifier().get_uri()
+        else:
+            identifier = record.get_identifier()
+
+        # search for entity ids
+        if 1 in attributes.iterkeys():
+            entity_id =  attributes[1].get_identifier().get_uri()
+        else:
+            entity_id =  attributes[1].get_identifier()
+
+        # search for activity ids
+        if 2 in attributes.iterkeys():
+            activity_id = attributes[2].get_identifier().get_uri()
+        else:
+            activity_id = attributes[2].get_identifier()
+
+        data = dict(
+            identifier = identifier,
+            entity = entity_id,
+            activity = activity_id,
+            #startTime = None,
+            #endTime = None,
+            provn = record.get_provn(),
+            asserted_types = [type.get_uri() for type in record.get_asserted_types()],
+            attributes = attributes.keys(),
+            extra_attributes = extra_attributes.keys()
         )
+
+
+        outV = self._graph.activities.index.lookup(identifier=activity_id).next()
+        inV = self._graph.entities.index.lookup(identifier=entity_id).next()
+        response = self.wasGeneratedBy.create(outV,inV,data)
+
+        data_update = response.data()
+
+        for attrs in attributes.iterkeys():
+            if attrs in prov.PROV_ID_ATTRIBUTES_MAP.keys():
+                prov_type = prov.PROV_ID_ATTRIBUTES_MAP[attrs].split(':')[-1]
+            else:
+                prov_type = attrs
+            data_update[prov_type] = attributes[attrs]
+
+        for extra in extra_attributes.iterkeys():
+            # bulbs reserves the 'label' keyword
+            prov_type = extra
+            data_update[prov_type] = extra_attributes[extra]
+
+        if record.is_relation:
+            self._graph.edges.update(response.eid,data_update)
+
         print 'generation:', response.eid
         return response
 
@@ -377,7 +448,6 @@ class Interface(object):
     def _set_bundle_proxy(self):
         self._graph.add_proxy("bundles", ProvBundle)
         self.bundles = self._graph.bundles
-
 
     class _ElementProxy(object):
         def __init__(self):
